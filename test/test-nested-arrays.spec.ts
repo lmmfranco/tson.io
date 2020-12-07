@@ -3,6 +3,11 @@ import { serialize, serializeArray, TSON } from "../src";
 class SimpleObject {
     @serialize() width: number;
     @serialize() height: number;
+
+    constructor(w?: number,h?: number) {
+        this.width = w;
+        this.height = h;
+    }    
 }
 
 class ClassWithArrays {
@@ -41,7 +46,35 @@ describe("Tests nested array serialization", () => {
         expect(parsed.objectArray).toHaveLength(2);
         expect(parsed.objectArray[0]).toBeInstanceOf(SimpleObject);
         expect(parsed.objectArray[0].height).toEqual(2);
+    });
 
-    });    
+    test("Serialize json with array of primitives", () => {
+        // Given
+        const data = new ClassWithArrays();
+        data.primitiveArray = [1,2,3,4,5]
+        const expected = JSON.stringify(data);
+
+        // When
+        const json = TSON.stringify(ClassWithArrays, data);
+
+        // Then
+        expect(json).toEqual(expected);
+    });
+
+    test("Serialize json with array of objects", () => {
+        // Given
+        const data = new ClassWithArrays();
+        data.objectArray = [
+            new SimpleObject(1,2),
+            new SimpleObject(3,4)
+        ];
+        const expected = JSON.stringify(data);
+
+        // When
+        const json = TSON.stringify(ClassWithArrays, data);
+
+        // Then
+        expect(json).toEqual(expected);
+    });
 
 });

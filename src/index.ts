@@ -151,14 +151,18 @@ export class TSON {
         for(const prop of metaProps) {
             const rawData = data[prop.propName];
 
-            if(prop.isArray && Array.isArray(rawData)) {
-                newObject[prop.serName] = rawData.map(item => {
-                    if(prop.construct) {
-                        return this._marshall(<any> prop.construct, item, replacer, space, true);
-                    } else {
-                        return item;
-                    }
-                })
+            if(prop.isArray) {
+                if(Array.isArray(rawData)) {
+                    newObject[prop.serName] = rawData.map(item => {
+                        if(prop.construct) {
+                            return this._marshall(<any> prop.construct, item, replacer, space, true);
+                        } else {
+                            return item;
+                        }
+                    })
+                } else {
+                    newObject[prop.serName] = rawData;
+                }
             } else if(prop.construct) {
                 newObject[prop.serName] = this._marshall(<any> prop.construct, rawData, replacer, space, true);
             } else {
