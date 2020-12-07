@@ -51,22 +51,32 @@ class TSONConfig {
 
 export class TSON {
     static globalConfig: TSONConfig;
+    private static _globalInstance: TSON;
 
     constructor(
         public config?: TSONConfig
     ) {}
 
+    private static _getGlobalInstance() {
+        if(!TSON._globalInstance) {
+            TSON._globalInstance = new TSON(TSON.globalConfig);
+        }
+        return TSON._globalInstance;
+    }
+
     static parse<T>(data: Object | string, clazz: Type<T>): T {
-        const instance = new TSON(TSON.globalConfig);
-        return instance.fromJson(data, clazz);
+        return TSON._getGlobalInstance().parse(data, clazz);
     }
 
-    static stringify<T>(clazz: Type<T>, data: T, replacer?: JsonReplacer, space?: JsonSpacer) {
-        const instance = new TSON(TSON.globalConfig);
-        return instance.toJson(clazz, data, replacer, space);
+    static parseArray<T>(data: Array<any> | string, clazz: Type<T>): T[] {
+        return TSON._getGlobalInstance().parseArray(data, clazz);
     }
 
-    fromJson<T>(data: Object | string, clazz: Type<T>): T {
+    static stringify<T>(clazz: Type<T>, data: T|T[], replacer?: JsonReplacer, space?: JsonSpacer) {
+        return TSON._getGlobalInstance().stringify(clazz, data, replacer, space);
+    }
+
+    parse<T>(data: Object | string, clazz: Type<T>): T {
         if(typeof data === "string") {
             return this._unmarshall(JSON.parse(data), clazz);
         } else {
@@ -74,8 +84,36 @@ export class TSON {
         }
     }
 
-    toJson<T>(clazz: Type<T>, data: T, replacer?: JsonReplacer, space?: JsonSpacer) {
-        return this._marshall(clazz, data, replacer, space);
+    parseArray<T>(data: Array<any> | string, clazz: Type<T>): T[] {
+        if(Array.isArray(data)) {
+            return data.map(item => this.parse(item, clazz));
+        } else {
+            const dataArray = JSON.parse(data);
+
+            if(Array.isArray(dataArray)) {
+                return dataArray.map(item => this.parse(item, clazz));
+            } else {
+                throw SyntaxError("TSON: Supplied data is not an array or json array.")
+            }
+
+        }
+    }
+
+    stringify<T>(clazz: Type<T>, data: T|T[], replacer?: JsonReplacer, space?: JsonSpacer): string  {
+        if(Array.isArray(data)) {
+            const parsedItems = data.map(item => this._marshall(clazz, item, null, null, true));
+            return JSON.stringify(parsedItems, replacer, space);
+        } else {
+            return this._marshall(clazz, data, replacer, space) as string;
+        }
+    }
+
+    fromJson<T>(data: Object | string, clazz: Type<T>): T {
+        return this.parse(data, clazz);
+    }
+
+    toJson<T>(clazz: Type<T>, data: T|T[], replacer?: JsonReplacer, space?: JsonSpacer): string {
+        return this.stringify(clazz, data, replacer, space);
     }
 
     private _unmarshall<T>(data: Object, clazz: Type<T>): T {
@@ -103,7 +141,7 @@ export class TSON {
         return instance;
     }
 
-    private _marshall<T>(clazz: Type<T>, data: T, replacer?: JsonReplacer, space?: JsonSpacer, innerCall = false) {
+    private _marshall<T>(clazz: Type<T>, data: T, replacer?: JsonReplacer, space?: JsonSpacer, innerCall = false): string | Object {
         const metaProps: PropertySerializationMeta[] = clazz.prototype[TSON_META_KEY];
         const newObject = {};
 

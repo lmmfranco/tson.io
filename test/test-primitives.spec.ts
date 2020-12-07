@@ -83,4 +83,31 @@ describe("Tests serialization for primitive properties", () => {
         // Then
         expect(parsed).toBeInstanceOf(MyClass);
     });
+
+    test("Deserialization should work with any javascript object", () => {
+        // Given
+        class OtherClass {
+            constructor(
+                public name: string,
+                public flag: boolean,
+                public count: number,
+            ) {}
+        }
+
+        const sourceAnon = {
+            name: defaultName,
+            flag: defaultFlag,
+            count: defaultCount,
+        }
+
+        const sourceTyped = new OtherClass(defaultName, defaultFlag, defaultCount);
+
+        // When
+        const parsedAnon = TSON.parse(sourceAnon, MyClass);
+        const parsedTyped = TSON.parse(sourceTyped, MyClass);
+
+        // Then
+        expect(parsedAnon).toBeInstanceOf(MyClass);
+        expect(parsedTyped).toBeInstanceOf(MyClass);
+    });
 });
