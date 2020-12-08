@@ -1,6 +1,6 @@
 {
   "name": "tson.io",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Typescript JSON serializer/deserializer",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
